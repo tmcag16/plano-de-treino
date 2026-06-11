@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plano Teresa</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #161616;
+    --surface2: #1e1e1e;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8e6e0;
+    --muted: #7a7870;
+    --accent: #c8a96e;
+    --accent2: #8fb89a;
+    --accent3: #c27a6a;
+    --accent-dim: rgba(200,169,110,0.12);
+    --green-dim: rgba(143,184,154,0.12);
+    --red-dim: rgba(194,122,106,0.12);
+    --serif: 'DM Serif Display', Georgia, serif;
+    --sans: 'DM Sans', sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: var(--sans); background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.6; }
+
+  .header { padding: 48px 40px 32px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap; }
+  .header-left h1 { font-family: var(--serif); font-size: 42px; font-weight: 400; letter-spacing: -0.5px; color: var(--text); line-height: 1.1; }
+  .header-left h1 span { color: var(--accent); font-style: italic; }
+  .header-left p { color: var(--muted); margin-top: 8px; font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; }
+  .header-stats { display: flex; gap: 32px; }
+  .stat { text-align: right; }
+  .stat-val { font-family: var(--serif); font-size: 28px; color: var(--accent); line-height: 1; }
+  .stat-lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+
+  .nav { display: flex; gap: 2px; padding: 16px 40px; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav-btn { font-family: var(--sans); font-size: 12px; font-weight: 400; letter-spacing: 0.05em; text-transform: uppercase; padding: 7px 16px; border-radius: 4px; border: 1px solid transparent; background: transparent; color: var(--muted); cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+  .nav-btn:hover { color: var(--text); background: var(--surface2); }
+  .nav-btn.active { color: var(--accent); border-color: rgba(200,169,110,0.3); background: var(--accent-dim); }
+
+  .main { padding: 32px 40px; max-width: 1400px; }
+  .view { display: none; }
+  .view.active { display: block; }
+
+  .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 40px; }
+  .week-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 12px; cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden; }
+  .week-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; opacity: 0; transition: opacity 0.2s; }
+  .week-card.gym::before { background: var(--accent); }
+  .week-card.dance::before { background: var(--accent2); }
+  .week-card.rest::before { background: var(--muted); }
+  .week-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+  .week-card:hover::before { opacity: 1; }
+  .week-day { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 8px; }
+  .week-title { font-family: var(--serif); font-size: 15px; line-height: 1.3; margin-bottom: 6px; }
+  .week-card.gym .week-title { color: var(--text); }
+  .week-card.dance .week-title { color: var(--accent2); }
+  .week-card.rest .week-title { color: var(--muted); font-style: italic; }
+  .week-tag { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500; }
+  .tag-gym { background: var(--accent-dim); color: var(--accent); }
+  .tag-dance { background: var(--green-dim); color: var(--accent2); }
+  .tag-rest { background: rgba(255,255,255,0.04); color: var(--muted); }
+
+  .phase-bar { display: flex; gap: 8px; margin-bottom: 32px; flex-wrap: wrap; }
+  .phase-btn { font-family: var(--sans); font-size: 12px; padding: 8px 20px; border-radius: 4px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; transition: all 0.2s; }
+  .phase-btn:hover { color: var(--text); border-color: var(--border2); }
+  .phase-btn.active { background: var(--accent-dim); color: var(--accent); border-color: rgba(200,169,110,0.3); }
+
+  .day-detail { display: none; }
+  .day-detail.active { display: block; }
+
+  .day-layout { display: grid; grid-template-columns: 280px 1fr; gap: 24px; }
+
+  .day-sidebar { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; height: fit-content; position: sticky; top: 24px; }
+  .day-sidebar-day { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 6px; }
+  .day-sidebar-title { font-family: var(--serif); font-size: 26px; line-height: 1.2; margin-bottom: 16px; color: var(--accent); }
+  .day-sidebar-note { font-size: 12px; color: var(--muted); line-height: 1.7; padding-top: 16px; border-top: 1px solid var(--border); }
+  .day-sidebar-note strong { color: var(--text); font-weight: 500; }
+
+  .exercises-panel { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .ex-header { padding: 18px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .ex-header-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); }
+  .ex-phase-badge { font-size: 10px; padding: 3px 10px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  .ex-row { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+  .ex-row:last-child { border-bottom: none; }
+  .ex-row.warmup .ex-main { opacity: 0.6; }
+  .ex-row.warmup .ex-name { font-style: italic; }
+  .ex-row.highlight .ex-main { background: var(--accent-dim); }
+
+  .ex-main { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 16px; padding: 14px 24px; cursor: pointer; transition: background 0.15s; }
+  .ex-main:hover { background: var(--surface2); }
+
+  .ex-name { font-size: 14px; font-weight: 400; color: var(--text); }
+  .ex-tag-new { font-size: 9px; padding: 2px 6px; background: var(--green-dim); color: var(--accent2); border-radius: 3px; text-transform: uppercase; letter-spacing: 0.05em; margin-left: 8px; vertical-align: middle; }
+  .ex-tag-fistula { font-size: 9px; padding: 2px 6px; background: var(--red-dim); color: var(--accent3); border-radius: 3px; text-transform: uppercase; letter-spacing: 0.05em; margin-left: 8px; vertical-align: middle; }
+  .ex-sets { font-size: 13px; color: var(--accent); font-weight: 500; white-space: nowrap; text-align: right; }
+  .ex-sets.muted { color: var(--muted); font-weight: 400; }
+
+  .ex-toggle { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 11px; transition: transform 0.2s; flex-shrink: 0; }
+  .ex-row.open .ex-toggle { transform: rotate(180deg); color: var(--accent); }
+
+  .ex-check { width: 20px; height: 20px; border: 1px solid var(--border2); border-radius: 4px; cursor: pointer; background: transparent; display: flex; align-items: center; justify-content: center; transition: all 0.15s; flex-shrink: 0; }
+  .ex-check:hover { border-color: var(--accent); }
+  .ex-check.done { background: var(--accent); border-color: var(--accent); }
+  .ex-check.done::after { content: ''; width: 10px; height: 6px; border-left: 1.5px solid var(--bg); border-bottom: 1.5px solid var(--bg); transform: rotate(-45deg) translate(1px, -1px); display: block; }
+
+  .ex-details { display: none; padding: 0 24px 18px 24px; border-top: 1px solid var(--border); background: var(--surface2); }
+  .ex-row.open .ex-details { display: block; }
+
+  .ex-details-inner { padding-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .ex-details-inner.single { grid-template-columns: 1fr; }
+
+  .detail-block { }
+  .detail-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 6px; }
+  .detail-steps { list-style: none; padding: 0; }
+  .detail-steps li { font-size: 12px; color: var(--muted); line-height: 1.7; padding: 4px 0; border-bottom: 1px solid var(--border); display: flex; gap: 10px; }
+  .detail-steps li:last-child { border-bottom: none; }
+  .step-num { color: var(--accent); font-weight: 500; flex-shrink: 0; min-width: 16px; }
+  .detail-tip { font-size: 12px; color: var(--muted); line-height: 1.7; background: var(--accent-dim); border-radius: 6px; padding: 10px 12px; margin-top: 10px; }
+  .detail-tip strong { color: var(--accent); font-weight: 500; }
+  .detail-tip.warn { background: var(--red-dim); }
+  .detail-tip.warn strong { color: var(--accent3); }
+
+  .section-divider { padding: 10px 24px 6px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border); }
+
+  .overload-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .rule-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 24px; border-left: 3px solid var(--accent); }
+  .rule-card.purple { border-left-color: #9b8ec4; }
+  .rule-card.red { border-left-color: var(--accent3); }
+  .rule-card h3 { font-family: var(--serif); font-size: 18px; font-weight: 400; margin-bottom: 12px; color: var(--text); }
+  .rule-card p { font-size: 13px; color: var(--muted); line-height: 1.8; }
+  .rule-card ul { list-style: none; padding: 0; margin-top: 10px; }
+  .rule-card ul li { font-size: 13px; color: var(--muted); padding: 5px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+  .rule-card ul li:last-child { border-bottom: none; }
+  .rule-card ul li span { color: var(--accent); }
+
+  .fistula-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+  .fistula-rule { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; font-size: 13px; color: var(--muted); display: flex; gap: 12px; align-items: flex-start; line-height: 1.6; }
+  .fistula-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent3); flex-shrink: 0; margin-top: 6px; }
+  .fistula-alert { background: var(--red-dim); border: 1px solid rgba(194,122,106,0.2); border-radius: 8px; padding: 16px 20px; font-size: 13px; color: var(--accent3); margin-top: 16px; line-height: 1.7; }
+
+  .back-btn { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); cursor: pointer; padding: 6px 0; margin-bottom: 24px; background: none; border: none; letter-spacing: 0.04em; text-transform: uppercase; transition: color 0.2s; }
+  .back-btn:hover { color: var(--text); }
+  .back-btn::before { content: '←'; font-size: 14px; }
+
+  .section-title { font-family: var(--serif); font-size: 28px; font-weight: 400; color: var(--text); margin-bottom: 8px; }
+  .section-sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; line-height: 1.7; }
+
+  .plan-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .plan-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  .plan-card-head { padding: 16px 18px 14px; border-bottom: 1px solid var(--border); }
+  .plan-card-day { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 4px; }
+  .plan-card-title { font-family: var(--serif); font-size: 17px; line-height: 1.3; color: var(--text); }
+  .plan-card-body { padding: 12px 18px 16px; }
+  .plan-ex-item { display: flex; justify-content: space-between; font-size: 12px; padding: 4px 0; color: var(--muted); border-bottom: 1px solid var(--border); }
+  .plan-ex-item:last-child { border-bottom: none; }
+  .plan-ex-sets { color: var(--accent); font-weight: 500; }
+  .plan-card.dance-card .plan-card-title { color: var(--accent2); }
+  .plan-card.rest-card .plan-card-title { color: var(--muted); font-style: italic; }
+
+  @media (max-width: 900px) {
+    .header { padding: 32px 20px 24px; }
+    .nav { padding: 12px 20px; }
+    .main { padding: 24px 20px; }
+    .week-grid { grid-template-columns: repeat(4, 1fr); }
+    .day-layout { grid-template-columns: 1fr; }
+    .day-sidebar { position: static; }
+    .ex-details-inner { grid-template-columns: 1fr; }
+    .header-stats { gap: 20px; }
+    .header-left h1 { font-size: 30px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>Plano <span>Teresa</span></h1>
+    <p>Ganho muscular · 12 semanas · Fase 2 ativa</p>
+  </div>
+  <div class="header-stats">
+    <div class="stat"><div class="stat-val">5</div><div class="stat-lbl">dias/semana</div></div>
+    <div class="stat"><div class="stat-val">45'</div><div class="stat-lbl">por sessão</div></div>
+    <div class="stat"><div class="stat-val">12</div><div class="stat-lbl">semanas</div></div>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="nav-btn active" onclick="showView('semana',this)">Vista semanal</button>
+  <button class="nav-btn" onclick="showView('plano',this)">Plano completo</button>
+  <button class="nav-btn" onclick="showView('overload',this)">Progressive overload</button>
+  <button class="nav-btn" onclick="showView('fistula',this)">Fístula — regras</button>
+</nav>
+
+<div class="main">
+
+<div id="view-semana" class="view active">
+  <p class="section-sub">Clica num dia para ver os exercícios. Clica em cada exercício para ver a explicação.</p>
+  <div class="week-grid">
+    <div class="week-card gym" onclick="openDay('seg')"><div class="week-day">Segunda</div><div class="week-title">Perna anterior</div><span class="week-tag tag-gym">Ginásio</span></div>
+    <div class="week-card gym" onclick="openDay('ter')"><div class="week-day">Terça</div><div class="week-title">Costas + Bicípites</div><span class="week-tag tag-gym">Ginásio</span></div>
+    <div class="week-card gym" onclick="openDay('qua')"><div class="week-day">Quarta</div><div class="week-title">Post + Glúteo + Core</div><span class="week-tag tag-gym">Ginásio</span></div>
+    <div class="week-card dance" onclick="openDay('qui')"><div class="week-day">Quinta</div><div class="week-title">Dança</div><span class="week-tag tag-dance">Recuperação</span></div>
+    <div class="week-card rest" onclick="openDay('sex')"><div class="week-day">Sexta</div><div class="week-title">Descanso</div><span class="week-tag tag-rest">Rest</span></div>
+    <div class="week-card gym" onclick="openDay('sab')"><div class="week-day">Sábado</div><div class="week-title">Glúteos Volume</div><span class="week-tag tag-gym">Ginásio</span></div>
+    <div class="week-card gym" onclick="openDay('dom')"><div class="week-day">Domingo</div><div class="week-title">PUSH + Core</div><span class="week-tag tag-gym">Ginásio</span></div>
+  </div>
+
+  <!-- SEGUNDA -->
+  <div id="day-seg" class="day-detail">
+    <button class="back-btn" onclick="closeDay('seg')">Semana</button>
+    <div class="day-layout">
+      <div class="day-sidebar">
+        <div class="day-sidebar-day">Segunda-feira</div>
+        <div class="day-sidebar-title">Perna anterior</div>
+        <div class="day-sidebar-note">
+          <strong>Foco:</strong> Quadríceps como motor principal.<br><br>
+          <strong>Mobilidade:</strong> Rotações de anca, leg swings, agachamento profundo assistido — 5 min.<br><br>
+          <strong>RIR alvo:</strong> 1-2 nas primeiras séries. Última série de leg press pode chegar a RIR 0.<br><br>
+          <strong>Cardio final:</strong> 10 min treadmill a ritmo conversacional.
+        </div>
+      </div>
+      <div class="exercises-panel">
+        <div class="ex-header"><span class="ex-header-title">Exercícios</span><span class="ex-phase-badge tag-gym">Fase 2 · 4 séries compostos</span></div>
+
+        <div class="section-divider">Aquecimento</div>
+        <div class="ex-row warmup">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Mobilidade dinâmica</span>
+            <span class="ex-sets muted">5 min</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner single"><div class="detail-block"><div class="detail-label">Como fazer</div><ul class="detail-steps"><li><span class="step-num">1</span><span>Rotações de anca — 10 círculos para cada lado, em pé com mãos na cintura.</span></li><li><span class="step-num">2</span><span>Leg swings — segura numa superfície, balança a perna para a frente e para trás, 10 vezes cada.</span></li><li><span class="step-num">3</span><span>Agachamento profundo assistido — segura numa barra ou máquina, desce até ao fundo e sobe devagar, 5 repetições.</span></li></ul></div></div></div>
+        </div>
+
+        <div class="section-divider">Compostos</div>
+        <div class="ex-row highlight">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Leg press horizontal <small style="color:var(--muted)">(pés baixos)</small></span>
+            <span class="ex-sets">4 × 10</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner">
+            <div class="detail-block"><div class="detail-label">Execução</div><ul class="detail-steps">
+              <li><span class="step-num">1</span><span>Senta-te com as costas completamente planas contra o apoio. Não deixar a zona lombar descolar no final do movimento.</span></li>
+              <li><span class="step-num">2</span><span>Coloca os pés na parte baixa da plataforma, à largura dos ombros. Dedos ligeiramente para fora.</span></li>
+              <li><span class="step-num">3</span><span>Desbloqueia a máquina e desce de forma controlada até os joelhos formarem 90° — não além.</span></li>
+              <li><span class="step-num">4</span><span>Empurra pelos calcanhares, não pelos dedos. Sobe sem bloquear completamente os joelhos no topo.</span></li>
+            </ul></div>
+            <div class="detail-block"><div class="detail-label">Porquê pés baixos?</div><p style="font-size:12px;color:var(--muted);line-height:1.7">Pés na zona baixa da plataforma aumenta a flexão do joelho e coloca mais ênfase no quadríceps. Pés altos recruta mais glúteo e posterior — usamos essa variante no sábado.</p><div class="detail-tip"><strong>RIR:</strong> Primeiras 3 séries a RIR 2. A última série pode ir até RIR 0 — perto da falha.</div></div>
+          </div></div>
+        </div>
+
+        <div class="section-divider">Isolados</div>
+        <div class="ex-row">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Leg extension</span>
+            <span class="ex-sets">3 × 12</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner">
+            <div class="detail-block"><div class="detail-label">Execução</div><ul class="detail-steps">
+              <li><span class="step-num">1</span><span>Ajusta o apoio da máquina para que fique ligeiramente acima dos tornozelos — não sobre os gémeos.</span></li>
+              <li><span class="step-num">2</span><span>Senta-te com as costas bem apoiadas. Eixo da máquina alinhado com o joelho.</span></li>
+              <li><span class="step-num">3</span><span>Sobe de forma controlada em 2 segundos, contrai o quadríceps no topo por 1 segundo.</span></li>
+              <li><span class="step-num">4</span><span>Desce devagar em 3 segundos. Não atirar a carga — o movimento é muscular, não de balanço.</span></li>
+            </ul></div>
+            <div class="detail-block"><div class="detail-label">Porquê este exercício?</div><p style="font-size:12px;color:var(--muted);line-height:1.7">Isola o quadríceps na extensão completa do joelho — um ângulo que o leg press não consegue atingir. Complementa bem o trabalho composto anterior.</p><div class="detail-tip"><strong>Tempo:</strong> A descida lenta (3 seg) é deliberada — cria mais tensão muscular e melhores resultados do que descer depressa.</div></div>
+          </div></div>
+        </div>
+
+        <div class="ex-row">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Walking lunges <span class="ex-tag-new">novo</span></span>
+            <span class="ex-sets">3 × 10/perna</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner">
+            <div class="detail-block"><div class="detail-label">Execução</div><ul class="detail-steps">
+              <li><span class="step-num">1</span><span>Fica de pé, pés juntos. Podes usar halteres leves ou só peso corporal para começar.</span></li>
+              <li><span class="step-num">2</span><span>Dá um passo longo à frente com a perna direita. O joelho de trás desce quase até ao chão sem tocar.</span></li>
+              <li><span class="step-num">3</span><span>Empurra pelo calcanhar da frente para subir e trazer a perna de trás para a frente — não para junto da outra, mas para dar o passo seguinte.</span></li>
+              <li><span class="step-num">4</span><span>Alterna pernas a caminhar. Mantém o tronco ereto, olha em frente.</span></li>
+            </ul></div>
+            <div class="detail-block"><div class="detail-label">Notas técnicas</div><p style="font-size:12px;color:var(--muted);line-height:1.7">O joelho da frente não deve ultrapassar muito os dedos do pé — se isso acontecer, o passo está demasiado curto. Começa sem carga até dominar o padrão.</p><div class="detail-tip"><strong>Primeiro treino:</strong> Faz só 2 séries com peso corporal para avaliar equilíbrio e técnica antes de adicionar carga.</div></div>
+          </div></div>
+        </div>
+
+        <div class="ex-row">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Hip adduction</span>
+            <span class="ex-sets">3 × 15</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner">
+            <div class="detail-block"><div class="detail-label">Execução</div><ul class="detail-steps">
+              <li><span class="step-num">1</span><span>Senta-te com as costas bem apoiadas no banco. Ajusta a amplitude para que as pernas fiquem abertas mas sem desconforto.</span></li>
+              <li><span class="step-num">2</span><span>Fecha as pernas de forma controlada, contrai os adutores no fundo do movimento.</span></li>
+              <li><span class="step-num">3</span><span>Abre devagar, resistindo à máquina — não soltes de golpe.</span></li>
+            </ul></div>
+            <div class="detail-block"><div class="detail-label">Contexto</div><p style="font-size:12px;color:var(--muted);line-height:1.7">Trabalha a face interna da coxa (adutores). Complementa o quadríceps e glúteo para equilíbrio muscular na perna. Não é o exercício mais espetacular — mas adutores fracos criam desequilíbrios que aparecem mais tarde.</p></div>
+          </div></div>
+        </div>
+
+        <div class="section-divider">Cardio</div>
+        <div class="ex-row warmup">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Treadmill</span>
+            <span class="ex-sets muted">10 min</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner single"><div class="detail-block"><div class="detail-label">Como fazer</div><p style="font-size:12px;color:var(--muted);line-height:1.7">Ritmo conversacional — consegues falar sem ficar sem ar. Não é sprint. Velocidade 5–6 km/h ou o que mantiver frequência cardíaca moderada. O objetivo é aumentar o gasto calórico total sem comprometer a recuperação muscular.</p></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TERÇA -->
+  <div id="day-ter" class="day-detail">
+    <button class="back-btn" onclick="closeDay('ter')">Semana</button>
+    <div class="day-layout">
+      <div class="day-sidebar">
+        <div class="day-sidebar-day">Terça-feira</div>
+        <div class="day-sidebar-title">Costas + Bicípites</div>
+        <div class="day-sidebar-note">
+          <strong>Foco:</strong> Pull pattern. Retração escapular em todos os exercícios de costas.<br><br>
+          <strong>Mobilidade:</strong> Rotações de ombro, extensão torácica, abertura de peito — 5 min.<br><br>
+          <strong>Fístula:</strong> Pulso direito neutro durante todo o treino. Sem strap ou cuff.<br><br>
+          <strong>RIR alvo:</strong> 1-2. Hammer curl com banda — mantém tensão constante durante todo o movimento.
+        </div>
+      </div>
+      <div class="exercises-panel">
+        <div class="ex-header"><span class="ex-header-title">Exercícios</span><span class="ex-phase-badge tag-gym">Fase 2 · PULL</span></div>
+
+        <div class="section-divider">Aquecimento</div>
+        <div class="ex-row warmup">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Mobilidade ombro + torácica</span>
+            <span class="ex-sets muted">5 min</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner single"><div class="detail-block"><div class="detail-label">Como fazer</div><ul class="detail-steps"><li><span class="step-num">1</span><span>Rotações de ombro para a frente e para trás — 10 cada direção, braços relaxados ao lado do corpo.</span></li><li><span class="step-num">2</span><span>Extensão torácica — senta-te numa cadeira ou usa o rolo de espuma, arqueia suavemente as costas para cima ao nível das omoplatas. 5–8 repetições.</span></li><li><span class="step-num">3</span><span>Abertura de peito — entrecruza os dedos atrás das costas, abre o peito e leva os braços para baixo e para trás. Mantém 10 segundos. Repete 3 vezes.</span></li></ul></div></div></div>
+        </div>
+
+        <div class="section-divider">Costas — compostos</div>
+        <div class="ex-row highlight">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Lat pulldown</span>
+            <span class="ex-sets">4 × 10</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner">
+            <div class="detail-block"><div class="detail-label">Execução</div><ul class="detail-steps">
+              <li><span class="step-num">1</span><span>Agarra a barra ligeiramente além da largura dos ombros. Pulso direito neutro — sem fletir para nenhum lado.</span></li>
+              <li><span class="step-num">2</span><span>Antes de puxar, retrai as omoplatas — como se quisesses apertar um lápis entre elas. Este é o movimento que ativa o grande dorsal.</span></li>
+              <li><span class="step-num">3</span><span>Puxa a barra para a parte superior do peito, não para a nuca. Cotovelos apontam para baixo e para trás.</span></li>
+              <li><span class="step-num">4</span><span>No ponto mais baixo, contrai as costas por 1 segundo. Sobe a barra de forma controlada — não soltes de golpe.</span></li>
+            </ul></div>
+            <div class="detail-block"><div class="detail-label">Porquê este exercício?</div><p style="font-size:12px;color:var(--muted);line-height:1.7">Trabalha o grande dorsal (o músculo que dá largura às costas) em toda a amplitude. É o composto base do dia de PULL.</p><div class="detail-tip warn"><strong>Fístula:</strong> Sem strap no braço direito. Grip firme mas sem apertar com o antebraço — a força vem do cotovelo para cima.</div></div>
+          </div></div>
+        </div>
+
+        <div class="ex-row highlight">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Seated cable row</span>
+            <span class="ex-sets">4 × 10</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner">
+            <div class="detail-block"><div class="detail-label">Execução</div><ul class="detail-steps">
+              <li><span class="step-num">1</span><span>Senta-te com joelhos ligeiramente fletidos, pés na plataforma. Ligeira inclinação do tronco para a frente no início — não exagerada.</span></li>
+              <li><span class="step-num">2</span><span>Puxa o cabo em direção ao umbigo, cotovelos rentes ao corpo. Não afastares os cotovelos para os lados.</span></li>
+              <li><span class="step-num">3</span><span>No final do movimento, retrai as omoplatas e endireita o tronco. A espinha não dobra — é um movimento de braços e costas, não de balanço.</span></li>
+              <li><span class="step-num">4</span><span>Estende os braços de volta de forma controlada, deixando as omoplatas abrir.</span></li>
+            </ul></div>
+            <div class="detail-block"><div class="detail-label">Diferença para o lat pulldown</div><p style="font-size:12px;color:var(--muted);line-height:1.7">O lat pulldown trabalha a componente vertical do pull (de cima para baixo). O seated row trabalha a componente horizontal (de longe para perto). Juntos cobrem toda a musculatura das costas.</p><div class="detail-tip warn"><strong>Fístula:</strong> Sem pressão no antebraço direito na plataforma de pés. Pulso direito neutro durante todo o pull.</div></div>
+          </div></div>
+        </div>
+
+        <div class="ex-row">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Back extension (máquina)</span>
+            <span class="ex-sets">3 × 12</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner">
+            <div class="detail-block"><div class="detail-label">Execução</div><ul class="detail-steps">
+              <li><span class="step-num">1</span><span>Na máquina de back extension, posiciona a almofada ao nível das ancas — não da cintura.</span></li>
+              <li><span class="step-num">2</span><span>Desce o tronco de forma controlada até sentires alongamento nos isquiotibiais.</span></li>
+              <li><span class="step-num">3</span><span>Sobe contraindo os glúteos e os espinais. Não hiperextendas — para quando o corpo estiver alinhado.</span></li>
+              <li><span class="step-num">4</span><span>Podes cruzar os braços no peito ou segurar um disco quando o exercício ficar fácil.</span></li>
+            </ul></div>
+            <div class="detail-block"><div class="detail-label">Contexto</div><p style="font-size:12px;color:var(--muted);line-height:1.7">Trabalha a cadeia posterior — espinais, glúteos e isquiotibiais. É um exercício de prevenção de lesões tão importante como de força. Costas lombares fortes protegem-te em todos os outros exercícios.</p></div>
+          </div></div>
+        </div>
+
+        <div class="section-divider">Bicípites</div>
+        <div class="ex-row">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Hammer curl <span class="ex-tag-fistula">banda</span></span>
+            <span class="ex-sets">3 × 12</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner">
+            <div class="detail-block"><div class="detail-label">Execução com banda</div><ul class="detail-steps">
+              <li><span class="step-num">1</span><span>Pisa a banda com os dois pés à largura dos ombros. Segura as pontas com as palmas viradas uma para a outra (grip neutro — como se segurasses um martelo).</span></li>
+              <li><span class="step-num">2</span><span>Cotovelos fixos junto ao corpo — não deixar que se afastem à frente durante o curl.</span></li>
+              <li><span class="step-num">3</span><span>Sobe os punhos em direção aos ombros de forma controlada. A banda vai aumentando a resistência ao longo do movimento — isso é intencional.</span></li>
+              <li><span class="step-num">4</span><span>Desce devagar, resistindo à banda. Não soltes de golpe.</span></li>
+            </ul></div>
+            <div class="detail-block"><div class="detail-label">Porquê banda e não haltere?</div><p style="font-size:12px;color:var(--muted);line-height:1.7">A banda distribui a tensão de forma progressiva ao longo do movimento, sem criar compressão localizada no antebraço — mais seguro para a fístula AV. O haltere cria pico de tensão no ponto de maior carga que pode ser problemático.</p><div class="detail-tip warn"><strong>Fístula:</strong> Monitoriza qualquer formigueiro, dormência ou calor no local. Para imediatamente se isso acontecer.</div></div>
+          </div></div>
+        </div>
+
+        <div class="section-divider">Cardio</div>
+        <div class="ex-row warmup">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Treadmill</span>
+            <span class="ex-sets muted">10 min</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner single"><div class="detail-block"><div class="detail-label">Nota</div><p style="font-size:12px;color:var(--muted);line-height:1.7">Nos dias de upper body o cardio é especialmente útil para manter o gasto calórico elevado. Ritmo conversacional — não intenso. 10 minutos é suficiente.</p></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUARTA -->
+  <div id="day-qua" class="day-detail">
+    <button class="back-btn" onclick="closeDay('qua')">Semana</button>
+    <div class="day-layout">
+      <div class="day-sidebar">
+        <div class="day-sidebar-day">Quarta-feira</div>
+        <div class="day-sidebar-title">Post + Glúteo + Core</div>
+        <div class="day-sidebar-note">
+          <strong>Atenção:</strong> Dia duplo — ginásio + dança às 20h. Volume controlado.<br><br>
+          <strong>Mobilidade:</strong> Rotações de anca, abertura posterior, hip flexor stretch — 5 min.<br><br>
+          <strong>Sem cardio</strong> no ginásio — a dança substitui.<br><br>
+          <strong>Hip thrust:</strong> O exercício mais importante do dia. 4 séries, contrai o glúteo ativamente no topo.
+        </div>
+      </div>
+      <div class="exercises-panel">
+        <div class="ex-header"><span class="ex-header-title">Exercícios</span><span class="ex-phase-badge tag-dance">Dança às 20h</span></div>
+
+        <div class="section-divider">Aquecimento</div>
+        <div class="ex-row warmup">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Mobilidade anca + posterior</span>
+            <span class="ex-sets muted">5 min</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner single"><div class="detail-block"><div class="detail-label">Como fazer</div><ul class="detail-steps"><li><span class="step-num">1</span><span>Rotações de anca — 10 círculos para cada lado em pé.</span></li><li><span class="step-num">2</span><span>Hip flexor stretch — joelho no chão, perna da frente à 90°, empurra a anca para a frente suavemente. 30 segundos cada lado.</span></li><li><span class="step-num">3</span><span>Glute bridge no chão — 10 repetições lentas para ativar os glúteos antes do hip thrust.</span></li></ul></div></div></div>
+        </div>
+
+        <div class="section-divider">Glúteos — composto</div>
+        <div class="ex-row highlight">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Hip thrust (barra)</span>
+            <span class="ex-sets">4 × 10</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner">
+            <div class="detail-block"><div class="detail-label">Execução</div><ul class="detail-steps">
+              <li><span class="step-num">1</span><span>Apoia as costas no banco ao nível das omoplatas — não no pescoço. Coloca um pad de espuma entre a barra e as ancas.</span></li>
+              <li><span class="step-num">2</span><span>Pés à largura dos ombros, dedos ligeiramente para fora. Os pés devem estar posicionados de modo a que os joelhos fiquem a 90° no topo do movimento.</span></li>
+              <li><span class="step-num">3</span><span>Empurra pelos calcanhares, não pelos dedos. Sobe a anca até o corpo ficar paralelo ao chão.</span></li>
+              <li><span class="step-num">4</span><span>No topo, contrai os glúteos ativamente por 1-2 segundos. Não hiperextendas a lombar.</span></li>
+              <li><span class="step-num">5</span><span>Desce de forma controlada — não deixes cair o peso.</span></li>
+            </ul></div>
+            <div class="detail-block"><div class="detail-label">Porquê é o exercício mais importante?</div><p style="font-size:12px;color:var(--muted);line-height:1.7">O hip thrust é o exercício com maior ativação do glúteo máximo em toda a amplitude — especialmente no pico de contração. É o que vai dar volume e forma ao glúteo. Nenhum outro exercício o substitui.</p><div class="detail-tip"><strong>Sinal de boa execução:</strong> Deves sentir a queimação principalmente no glúteo, não nos isquiotibiais nem na lombar. Se sentires mais na lombar, os pés estão demasiado perto do corpo.</div></div>
+          </div></div>
+        </div>
+
+        <div class="section-divider">Posterior</div>
+        <div class="ex-row">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Seated leg curl</span>
+            <span class="ex-sets">4 × 10</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner">
+            <div class="detail-block"><div class="detail-label">Execução</div><ul class="detail-steps">
+              <li><span class="step-num">1</span><span>Ajusta o apoio para que fique ligeiramente acima dos tornozelos — não sobre os gémeos.</span></li>
+              <li><span class="step-num">2</span><span>Costas apoiadas, joelhos alinhados com o eixo da máquina.</span></li>
+              <li><span class="step-num">3</span><span>Puxa os calcanhares em direção às nádegas de forma controlada. Contrai os isquiotibiais no fundo por 1 segundo.</span></li>
+              <li><span class="step-num">4</span><span>Sobe devagar — 3 segundos. Não deixes a carga subir de golpe.</span></li>
+            </ul></div>
+            <div class="detail-block"><div class="detail-label">Contexto</div><p style="font-size:12px;color:var(--muted);line-height:1.7">Isola os isquiotibiais (posterior da coxa). Trabalha o joelho em flexão, que é o ângulo onde os isquiotibiais são mais ativos. Complementa o hip thrust que os trabalha mais em extensão da anca.</p></div>
+          </div></div>
+        </div>
+
+        <div class="ex-row">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Calf press (máquina)</span>
+            <span class="ex-sets">3 × 15</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner">
+            <div class="detail-block"><div class="detail-label">Execução</div><ul class="detail-steps">
+              <li><span class="step-num">1</span><span>Coloca a parte dianteira dos pés na plataforma, calcanhares no ar.</span></li>
+              <li><span class="step-num">2</span><span>Desce os calcanhares abaixo da plataforma para sentir o alongamento no gémeo.</span></li>
+              <li><span class="step-num">3</span><span>Sobe em pontas dos pés, contrai os gémeos no topo por 1 segundo.</span></li>
+              <li><span class="step-num">4</span><span>Amplitude completa — do máximo alongamento ao máximo encurtamento.</span></li>
+            </ul></div>
+            <div class="detail-block"><div class="detail-label">Porquê 15 reps?</div><p style="font-size:12px;color:var(--muted);line-height:1.7">Os gémeos têm muitas fibras de resistência (tipo 1) que respondem melhor a volumes mais altos. 15 reps com amplitude total é mais eficaz do que 8 reps com amplitude parcial.</p></div>
+          </div></div>
+        </div>
+
+        <div class="section-divider">Core</div>
+        <div class="ex-row">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Plank</span>
+            <span class="ex-sets">3 × 50s</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner">
+            <div class="detail-block"><div class="detail-label">Execução</div><ul class="detail-steps">
+              <li><span class="step-num">1</span><span>Antebraços no chão, cotovelos alinhados com os ombros. Corpo em linha reta da cabeça aos calcanhares.</span></li>
+              <li><span class="step-num">2</span><span>Contrai o abdómen como se fosses levar um soco — não deixares a barriga cair.</span></li>
+              <li><span class="step-num">3</span><span>Não levantares nem baixares as ancas. Não prenderes a respiração — respira de forma controlada.</span></li>
+              <li><span class="step-num">4</span><span>Olha para o chão, pescoço neutro.</span></li>
+            </ul></div>
+            <div class="detail-block"><div class="detail-label">Porquê o plank?</div><p style="font-size:12px;color:var(--muted);line-height:1.7">Trabalha o core em estabilização isométrica — a função real do core no dia-a-dia e no treino. Um core estável protege a lombar durante todos os outros exercícios e melhora a transferência de força.</p><div class="detail-tip"><strong>Progressão:</strong> Quando 50s ficarem fáceis, aumenta 5–10 segundos por semana.</div></div>
+          </div></div>
+        </div>
+
+        <div class="ex-row">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Weighted crunch</span>
+            <span class="ex-sets">3 × 15</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner">
+            <div class="detail-block"><div class="detail-label">Execução</div><ul class="detail-steps">
+              <li><span class="step-num">1</span><span>Deita-te de costas, joelhos dobrados, pés no chão. Segura um disco ou haltere no peito.</span></li>
+              <li><span class="step-num">2</span><span>Curva o tronco para cima usando os abdominais — não puxando o pescoço. A lombar fica no chão.</span></li>
+              <li><span class="step-num">3</span><span>Sobe até sentires o abdómen bem contraído. Não é um sit-up completo — é uma flexão parcial controlada.</span></li>
+              <li><span class="step-num">4</span><span>Desce de forma controlada. Não bates com as costas no chão.</span></li>
+            </ul></div>
+            <div class="detail-block"><div class="detail-label">Contexto</div><p style="font-size:12px;color:var(--muted);line-height:1.7">O crunch com peso trabalha o reto abdominal em encurtamento — o movimento de flexão da coluna. Complementa o plank que trabalha a estabilização. Juntos dão cobertura completa ao core anterior.</p></div>
+          </div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUINTA -->
+  <div id="day-qui" class="day-detail">
+    <button class="back-btn" onclick="closeDay('qui')">Semana</button>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:32px;max-width:480px">
+      <div class="day-sidebar-day">Quinta-feira</div>
+      <div class="day-sidebar-title" style="color:var(--accent2)">Dança</div>
+      <p style="font-size:13px;color:var(--muted);line-height:1.8">Sem ginásio. A aula de dança conta como recuperação ativa — mantém circulação e mobilidade sem sobrecarregar o sistema muscular.</p>
+      <p style="font-size:13px;color:var(--muted);line-height:1.8;margin-top:12px">Hidrata bem antes e depois. A quinta entre o dia duplo de quarta e o sábado de glúteos é essencial para recuperação.</p>
+    </div>
+  </div>
+
+  <!-- SEXTA -->
+  <div id="day-sex" class="day-detail">
+    <button class="back-btn" onclick="closeDay('sex')">Semana</button>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:32px;max-width:480px">
+      <div class="day-sidebar-day">Sexta-feira</div>
+      <div class="day-sidebar-title" style="color:var(--muted);font-style:italic">Descanso</div>
+      <p style="font-size:13px;color:var(--muted);line-height:1.8">Descanso ativo ou mobilidade leve. Sem treino estruturado.</p>
+      <p style="font-size:13px;color:var(--muted);line-height:1.8;margin-top:12px">É neste dia (e durante o sono) que o músculo cresce. Não subestimes o descanso.</p>
+    </div>
+  </div>
+
+  <!-- SÁBADO -->
+  <div id="day-sab" class="day-detail">
+    <button class="back-btn" onclick="closeDay('sab')">Semana</button>
+    <div class="day-layout">
+      <div class="day-sidebar">
+        <div class="day-sidebar-day">Sábado</div>
+        <div class="day-sidebar-title">Glúteos Volume</div>
+        <div class="day-sidebar-note">
+          <strong>Foco:</strong> Volume total no glúteo. Dois dias depois da quarta — deves estar recuperada.<br><br>
+          <strong>Bulgarian split squat:</strong> Exercício mais técnico do dia. Começa com carga leve, foca a técnica. Tronco inclinado para a frente para recrutar mais glúteo.<br><br>
+          <strong>RIR alvo:</strong> 1-2. Última série de Bulgarian e leg press pode ir a RIR 0.
+        </div>
+      </div>
+      <div class="exercises-panel">
+        <div class="ex-header"><span class="ex-header-title">Exercícios</span><span class="ex-phase-badge tag-gym">Fase 2 · Glúteos</span></div>
+
+        <div class="section-divider">Aquecimento</div>
+        <div class="ex-row warmup">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Mobilidade anca</span>
+            <span class="ex-sets muted">5 min</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner single"><div class="detail-block"><div class="detail-label">Como fazer</div><ul class="detail-steps"><li><span class="step-num">1</span><span>Rotações de anca — 10 círculos para cada lado.</span></li><li><span class="step-num">2</span><span>Hip flexor stretch — 30 segundos cada lado.</span></li><li><span class="step-num">3</span><span>Glute bridge no chão com 10 reps lentas para ativar.</span></li><li><span class="step-num">4</span><span>1 série leve de Bulgarian split squat com peso corporal para preparar o padrão.</span></li></ul></div></div></div>
+        </div>
+
+        <div class="section-divider">Compostos</div>
+        <div class="ex-row highlight">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Bulgarian split squat <small style="color:var(--muted)">(tronco à frente)</small></span>
+            <span class="ex-sets">4 × 8/perna</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner">
+            <div class="detail-block"><div class="detail-label">Execução</div><ul class="detail-steps">
+              <li><span class="step-num">1</span><span>Coloca o pé de trás no banco — usa o peito do pé, não os dedos. Pé da frente suficientemente à frente para que o joelho não ultrapasse muito os dedos na descida.</span></li>
+              <li><span class="step-num">2</span><span>Inclina o tronco para a frente deliberadamente — cerca de 30-45°. Este é o detalhe que faz a diferença entre trabalhar mais o quadríceps (tronco ereto) e mais o glúteo (tronco inclinado).</span></li>
+              <li><span class="step-num">3</span><span>Desce de forma controlada, 3 segundos. O joelho de trás baixa em direção ao chão sem tocar.</span></li>
+              <li><span class="step-num">4</span><span>Empurra pelo calcanhar da frente para subir. Contrai o glúteo no topo.</span></li>
+            </ul></div>
+            <div class="detail-block"><div class="detail-label">Porquê é o mais técnico?</div><p style="font-size:12px;color:var(--muted);line-height:1.7">Requer equilíbrio, mobilidade de anca e coordenação em simultâneo. Começa sempre com peso corporal ou muito leve até o movimento ser fluido. Um Bulgarian mal executado com carga pesada é uma lesão à espera de acontecer.</p><div class="detail-tip"><strong>Primeiro sinal de boa técnica:</strong> Consegues fazer 8 reps por perna sem perder o equilíbrio e sentindo o trabalho principalmente no glúteo.</div></div>
+          </div></div>
+        </div>
+
+        <div class="ex-row highlight">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Leg press horizontal <small style="color:var(--muted)">(pés altos/afastados)</small></span>
+            <span class="ex-sets">4 × 10</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner">
+            <div class="detail-block"><div class="detail-label">Execução</div><ul class="detail-steps">
+              <li><span class="step-num">1</span><span>Coloca os pés na zona alta da plataforma, mais afastados do que a largura dos ombros. Dedos mais virados para fora do que habitual.</span></li>
+              <li><span class="step-num">2</span><span>Desce de forma controlada — esta posição permite uma amplitude maior e maior alongamento do glúteo.</span></li>
+              <li><span class="step-num">3</span><span>Empurra sentindo o trabalho nas nádegas e na face posterior da coxa, não no joelho.</span></li>
+            </ul></div>
+            <div class="detail-block"><div class="detail-label">Diferença para a segunda-feira</div><p style="font-size:12px;color:var(--muted);line-height:1.7">Na segunda usas pés baixos para focar quadríceps. Aqui usas pés altos e afastados para focar glúteo e adutores. É a mesma máquina, outro padrão de recrutamento muscular — a posição dos pés muda completamente o exercício.</p></div>
+          </div></div>
+        </div>
+
+        <div class="section-divider">Isolados</div>
+        <div class="ex-row">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Glute kickback (máquina)</span>
+            <span class="ex-sets">3 × 15</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner">
+            <div class="detail-block"><div class="detail-label">Execução</div><ul class="detail-steps">
+              <li><span class="step-num">1</span><span>Na máquina de kickback, posiciona o apoio no pé ou na dobra do joelho conforme o modelo disponível.</span></li>
+              <li><span class="step-num">2</span><span>Empurra a perna para trás de forma controlada, contraindo o glúteo no ponto mais alto.</span></li>
+              <li><span class="step-num">3</span><span>Não rotacionares a anca — o movimento é da perna para trás, não para o lado.</span></li>
+              <li><span class="step-num">4</span><span>Volta à posição inicial de forma controlada.</span></li>
+            </ul></div>
+            <div class="detail-block"><div class="detail-label">Contexto</div><p style="font-size:12px;color:var(--muted);line-height:1.7">Isola o glúteo máximo em extensão da anca — o mesmo padrão do hip thrust mas unilateral e com amplitude mais focada. Bom para acabar o volume do glúteo quando os compostos já criaram a fadiga principal.</p></div>
+          </div></div>
+        </div>
+
+        <div class="ex-row">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Cable lateral leg raise (polia)</span>
+            <span class="ex-sets">3 × 15</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner">
+            <div class="detail-block"><div class="detail-label">Execução</div><ul class="detail-steps">
+              <li><span class="step-num">1</span><span>Senta-te com as costas bem apoiadas. Costas e ancas contra o banco.</span></li>
+              <li><span class="step-num">2</span><span>Abre as pernas de forma controlada contra a resistência da máquina. Amplitude total sem desconforto.</span></li>
+              <li><span class="step-num">3</span><span>Fecha devagar, resistindo à máquina — não soltes de golpe.</span></li>
+            </ul></div>
+            <div class="detail-block"><div class="detail-label">Contexto</div><p style="font-size:12px;color:var(--muted);line-height:1.7">Trabalha o glúteo médio (face lateral) e os abdutores. O glúteo médio é crucial para a estabilidade pélvica — sem ele, a anca cai para o lado ao caminhar ou correr. Complementa o hip thrust que trabalha principalmente o glúteo máximo (face posterior).</p></div>
+          </div></div>
+        </div>
+
+        <div class="section-divider">Cardio</div>
+        <div class="ex-row warmup">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Treadmill</span>
+            <span class="ex-sets muted">10 min</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner single"><div class="detail-block"><div class="detail-label">Nota</div><p style="font-size:12px;color:var(--muted);line-height:1.7">Ritmo conversacional. Depois de um treino de glúteos intenso, o cardio leve ajuda a aumentar o fluxo sanguíneo para os músculos trabalhados — pode acelerar a recuperação.</p></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DOMINGO -->
+  <div id="day-dom" class="day-detail">
+    <button class="back-btn" onclick="closeDay('dom')">Semana</button>
+    <div class="day-layout">
+      <div class="day-sidebar">
+        <div class="day-sidebar-day">Domingo</div>
+        <div class="day-sidebar-title">PUSH + Core</div>
+        <div class="day-sidebar-note">
+          <strong>Foco:</strong> Push pattern — peito, ombros, tríceps.<br><br>
+          <strong>Mobilidade:</strong> Rotações de ombro, abertura de peito, extensão torácica — 5 min.<br><br>
+          <strong>Fístula:</strong> Preferir máquina. Não pousar halteres no antebraço direito. Pulso neutro.<br><br>
+          <strong>Core no final:</strong> Russian twists podem ser substituídos por dead bug se preferires.
+        </div>
+      </div>
+      <div class="exercises-panel">
+        <div class="ex-header"><span class="ex-header-title">Exercícios</span><span class="ex-phase-badge tag-gym">Fase 2 · PUSH</span></div>
+
+        <div class="section-divider">Aquecimento</div>
+        <div class="ex-row warmup">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Mobilidade ombro + peito</span>
+            <span class="ex-sets muted">5 min</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner single"><div class="detail-block"><div class="detail-label">Como fazer</div><ul class="detail-steps"><li><span class="step-num">1</span><span>Rotações de ombro — 10 para a frente, 10 para trás. Braços relaxados ao lado do corpo.</span></li><li><span class="step-num">2</span><span>Abertura de peito — dedos entrelaçados atrás das costas, abre o peito. 3 × 10 segundos.</span></li><li><span class="step-num">3</span><span>Extensão torácica — arqueia suavemente ao nível das omoplatas. 5–8 repetições.</span></li><li><span class="step-num">4</span><span>1 série leve de chest press com carga mínima para ativar o padrão antes de trabalhar.</span></li></ul></div></div></div>
+        </div>
+
+        <div class="section-divider">Compostos</div>
+        <div class="ex-row highlight">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Chest press <span class="ex-tag-fistula">máquina</span></span>
+            <span class="ex-sets">4 × 10</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner">
+            <div class="detail-block"><div class="detail-label">Execução</div><ul class="detail-steps">
+              <li><span class="step-num">1</span><span>Ajusta o banco para que os handles fiquem ao nível médio do peito. Costas e ombros bem apoiados no banco.</span></li>
+              <li><span class="step-num">2</span><span>Antes de empurrar, retrai as omoplatas — puxa os ombros para baixo e para trás. Mantém esta posição durante todo o movimento.</span></li>
+              <li><span class="step-num">3</span><span>Cotovelos a ~45° do corpo (não a 90°). Empurra até à extensão quase completa — sem bloquear os cotovelos.</span></li>
+              <li><span class="step-num">4</span><span>Volta de forma controlada, sentindo o peito a alongar.</span></li>
+            </ul></div>
+            <div class="detail-block"><div class="detail-label">Porquê máquina e não barra?</div><p style="font-size:12px;color:var(--muted);line-height:1.7">Com a fístula AV, a barra cria compressão no pulso e antebraço no ponto de apoio. A máquina permite pulso neutro durante todo o movimento, eliminando esse risco sem comprometer o estímulo muscular.</p><div class="detail-tip warn"><strong>Fístula:</strong> Não pousar os handles no antebraço direito ao entrar ou sair da máquina. Pulso direito neutro durante todo o exercício.</div></div>
+          </div></div>
+        </div>
+
+        <div class="ex-row highlight">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Shoulder press <span class="ex-tag-fistula">máquina</span></span>
+            <span class="ex-sets">4 × 10</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner">
+            <div class="detail-block"><div class="detail-label">Execução</div><ul class="detail-steps">
+              <li><span class="step-num">1</span><span>Ajusta o banco para que os handles fiquem ao nível dos ombros. Costas apoiadas, lombar neutra.</span></li>
+              <li><span class="step-num">2</span><span>Empurra para cima sem bloquear completamente os cotovelos no topo. Não arqueia as costas para ganhar amplitude.</span></li>
+              <li><span class="step-num">3</span><span>Desce de forma controlada até os cotovelos ficarem ligeiramente abaixo do nível dos ombros — não abaixo da linha dos ombros.</span></li>
+            </ul></div>
+            <div class="detail-block"><div class="detail-label">Contexto</div><p style="font-size:12px;color:var(--muted);line-height:1.7">Trabalha os deltóides (ombros) em conjunto com o peito e tríceps. A máquina guia o movimento num plano fixo, o que é mais seguro para o ombro e para a fístula do que halteres onde tens de estabilizar todo o percurso.</p></div>
+          </div></div>
+        </div>
+
+        <div class="section-divider">Isolados</div>
+        <div class="ex-row">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Chest fly (halteres, banco)</span>
+            <span class="ex-sets">3 × 12</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner">
+            <div class="detail-block"><div class="detail-label">Execução</div><ul class="detail-steps">
+              <li><span class="step-num">1</span><span>Ajusta as polias para a altura do peito ou ligeiramente acima. Fica de pé no centro, um pé ligeiramente à frente para estabilidade.</span></li>
+              <li><span class="step-num">2</span><span>Segura as pegas com os braços ligeiramente fletidos — mantém este ângulo durante todo o exercício. Não dobras mais os cotovelos.</span></li>
+              <li><span class="step-num">3</span><span>Fecha os braços para a frente como se abraçasses uma árvore grande. Contrai o peito no ponto de junção.</span></li>
+              <li><span class="step-num">4</span><span>Abre os braços de volta de forma controlada, sentindo o peito a alongar.</span></li>
+            </ul></div>
+            <div class="detail-block"><div class="detail-label">Execução</div><p style="font-size:12px;color:var(--muted);line-height:1.7">Deitada no banco plano, halteres nas mãos. Abre os braços para os lados em arco controlado com ligeira flexão no cotovelo durante todo o movimento. Desce até sentir o alongamento no peito sem forçar além do conforto. Sobe contraindo o peito. Com a fístula: não pousar os halteres no antebraço direito ao trocar.</p></div>
+          </div></div>
+        </div>
+
+        <div class="ex-row">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Lateral raises</span>
+            <span class="ex-sets">3 × 15</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner">
+            <div class="detail-block"><div class="detail-label">Execução</div><ul class="detail-steps">
+              <li><span class="step-num">1</span><span>Halteres leves. Fica de pé, braços ao lado do corpo com ligeira flexão do cotovelo.</span></li>
+              <li><span class="step-num">2</span><span>Levanta os braços para os lados até à altura dos ombros — não acima. Como se estivesses a derramar água de dois copos.</span></li>
+              <li><span class="step-num">3</span><span>No topo, o cotovelo deve estar ligeiramente mais alto que o pulso. Se o pulso sobe mais, o trapézio está a fazer o trabalho — baixa a carga.</span></li>
+              <li><span class="step-num">4</span><span>Desce de forma controlada — 3 segundos. Não deixes cair.</span></li>
+            </ul></div>
+            <div class="detail-block"><div class="detail-label">Erro mais comum</div><p style="font-size:12px;color:var(--muted);line-height:1.7">Usar carga demasiado pesada e compensar com balanço do tronco ou encolher os ombros. O lateral raise é um exercício de isolamento — a carga certa é aquela com que consegues fazer o movimento limpo.</p><div class="detail-tip warn"><strong>Fístula:</strong> Com o braço direito, atenção ao pulso — mantém neutro durante o movimento. Não deixar o haltere "pender" do lado da fístula.</div></div>
+          </div></div>
+        </div>
+
+        <div class="ex-row">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Triceps rope pushdown</span>
+            <span class="ex-sets">3 × 12</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner">
+            <div class="detail-block"><div class="detail-label">Execução</div><ul class="detail-steps">
+              <li><span class="step-num">1</span><span>Segura a corda com as palmas viradas para baixo. Cotovelos fixos junto ao corpo — não se movem durante o exercício.</span></li>
+              <li><span class="step-num">2</span><span>Empurra a corda para baixo até à extensão completa dos cotovelos. No ponto mais baixo, abre ligeiramente os punhos para fora — isso aumenta a contração do tríceps.</span></li>
+              <li><span class="step-num">3</span><span>Volta de forma controlada — não deixes os cotovelos subirem acima da cintura.</span></li>
+            </ul></div>
+            <div class="detail-block"><div class="detail-label">Contexto</div><p style="font-size:12px;color:var(--muted);line-height:1.7">O tríceps representa ~2/3 do volume do braço. Trabalhar os tríceps diretamente, além do que já são recrutados no chest e shoulder press, é importante para o desenvolvimento do braço.</p></div>
+          </div></div>
+        </div>
+
+        <div class="section-divider">Core</div>
+        <div class="ex-row">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Russian twists</span>
+            <span class="ex-sets">3 × 15</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner">
+            <div class="detail-block"><div class="detail-label">Execução</div><ul class="detail-steps">
+              <li><span class="step-num">1</span><span>Senta-te no chão, joelhos dobrados, pés ligeiramente levantados (ou no chão se for mais fácil). Inclina o tronco para trás a ~45°.</span></li>
+              <li><span class="step-num">2</span><span>Segura um peso (disco, haltere ou garrafa) com as duas mãos juntas à frente do peito.</span></li>
+              <li><span class="step-num">3</span><span>Roda o tronco de um lado para o outro, levando o peso junto. O movimento vem do core, não dos braços.</span></li>
+            </ul></div>
+            <div class="detail-block"><div class="detail-label">Alternativa</div><p style="font-size:12px;color:var(--muted);line-height:1.7">Os Russian twists trabalham os oblíquos (laterais do abdómen). Se quiseres uma alternativa mais eficaz, o dead bug é superior para estabilização. Diz-me e explico como fazer.</p></div>
+          </div></div>
+        </div>
+
+        <div class="section-divider">Cardio</div>
+        <div class="ex-row warmup">
+          <div class="ex-main" onclick="toggleEx(this)">
+            <span class="ex-name">Treadmill</span>
+            <span class="ex-sets muted">10 min</span>
+            <span class="ex-toggle">▾</span>
+          </div>
+          <div class="ex-details"><div class="ex-details-inner single"><div class="detail-block"><div class="detail-label">Nota</div><p style="font-size:12px;color:var(--muted);line-height:1.7">Último treino da semana antes do descanso de segunda. Ritmo conversacional. Bom momento para refletir sobre o que correu bem na semana e o que subir de carga na próxima.</p></div></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PLANO COMPLETO -->
+<div id="view-plano" class="view">
+  <h2 class="section-title">Plano completo</h2>
+  <p class="section-sub">Fase 2 (semanas 1–4) → Fase 3 (semanas 5–8). Semana 4 e semana 8 são deload obrigatório.</p>
+  <div class="phase-bar">
+    <button class="phase-btn active" onclick="switchPhase(2,this)">Fase 2 — Acumulação</button>
+    <button class="phase-btn" onclick="switchPhase(3,this)">Fase 3 — Intensificação</button>
+  </div>
+  <div id="phase2-grid" class="plan-grid">
+    <div class="plan-card"><div class="plan-card-head"><div class="plan-card-day">Segunda</div><div class="plan-card-title">Perna anterior</div></div><div class="plan-card-body"><div class="plan-ex-item"><span>Leg press</span><span class="plan-ex-sets">4×10</span></div><div class="plan-ex-item"><span>Leg extension</span><span class="plan-ex-sets">3×12</span></div><div class="plan-ex-item"><span>Walking lunges</span><span class="plan-ex-sets">3×10/p</span></div><div class="plan-ex-item"><span>Hip adduction</span><span class="plan-ex-sets">3×15</span></div><div class="plan-ex-item"><span>Cardio</span><span class="plan-ex-sets">10 min</span></div></div></div>
+    <div class="plan-card"><div class="plan-card-head"><div class="plan-card-day">Terça</div><div class="plan-card-title">Costas + Bicípites</div></div><div class="plan-card-body"><div class="plan-ex-item"><span>Lat pulldown</span><span class="plan-ex-sets">4×10</span></div><div class="plan-ex-item"><span>Seated cable row</span><span class="plan-ex-sets">4×10</span></div><div class="plan-ex-item"><span>Back extension (máquina)</span><span class="plan-ex-sets">3×12</span></div><div class="plan-ex-item"><span>Hammer curl (banda)</span><span class="plan-ex-sets">3×12</span></div><div class="plan-ex-item"><span>Cardio</span><span class="plan-ex-sets">10 min</span></div></div></div>
+    <div class="plan-card"><div class="plan-card-head"><div class="plan-card-day">Quarta</div><div class="plan-card-title">Post + Glúteo + Core</div></div><div class="plan-card-body"><div class="plan-ex-item"><span>Hip thrust</span><span class="plan-ex-sets">4×10</span></div><div class="plan-ex-item"><span>Seated leg curl</span><span class="plan-ex-sets">4×10</span></div><div class="plan-ex-item"><span>Calf press</span><span class="plan-ex-sets">3×15</span></div><div class="plan-ex-item"><span>Plank</span><span class="plan-ex-sets">3×50s</span></div><div class="plan-ex-item"><span>Weighted crunch</span><span class="plan-ex-sets">3×15</span></div></div></div>
+    <div class="plan-card dance-card"><div class="plan-card-head"><div class="plan-card-day">Quinta</div><div class="plan-card-title">Dança</div></div><div class="plan-card-body"><div class="plan-ex-item" style="color:var(--muted);font-style:italic"><span>Recuperação ativa</span></div></div></div>
+    <div class="plan-card rest-card"><div class="plan-card-head"><div class="plan-card-day">Sexta</div><div class="plan-card-title">Descanso</div></div><div class="plan-card-body"><div class="plan-ex-item" style="color:var(--muted);font-style:italic"><span>Mobilidade leve</span></div></div></div>
+    <div class="plan-card"><div class="plan-card-head"><div class="plan-card-day">Sábado</div><div class="plan-card-title">Glúteos Volume</div></div><div class="plan-card-body"><div class="plan-ex-item"><span>Bulgarian split squat</span><span class="plan-ex-sets">4×8/p</span></div><div class="plan-ex-item"><span>Leg press (pés altos)</span><span class="plan-ex-sets">4×10</span></div><div class="plan-ex-item"><span>Glute kickback</span><span class="plan-ex-sets">3×15</span></div><div class="plan-ex-item"><span>Cable lateral leg raise (polia)</span><span class="plan-ex-sets">3×15</span></div><div class="plan-ex-item"><span>Cardio</span><span class="plan-ex-sets">10 min</span></div></div></div>
+    <div class="plan-card"><div class="plan-card-head"><div class="plan-card-day">Domingo</div><div class="plan-card-title">PUSH + Core</div></div><div class="plan-card-body"><div class="plan-ex-item"><span>Chest press (máq.)</span><span class="plan-ex-sets">4×10</span></div><div class="plan-ex-item"><span>Shoulder press (máq.)</span><span class="plan-ex-sets">4×10</span></div><div class="plan-ex-item"><span>Chest fly (halteres, banco)</span><span class="plan-ex-sets">3×12</span></div><div class="plan-ex-item"><span>Lateral raises</span><span class="plan-ex-sets">3×15</span></div><div class="plan-ex-item"><span>Triceps pushdown</span><span class="plan-ex-sets">3×12</span></div><div class="plan-ex-item"><span>Russian twists</span><span class="plan-ex-sets">3×15</span></div></div></div>
+  </div>
+  <div id="phase3-grid" class="plan-grid" style="display:none">
+    <div class="plan-card"><div class="plan-card-head"><div class="plan-card-day">Segunda</div><div class="plan-card-title">Perna anterior</div></div><div class="plan-card-body"><div class="plan-ex-item"><span>Leg press</span><span class="plan-ex-sets">4×6-8</span></div><div class="plan-ex-item"><span>Leg extension</span><span class="plan-ex-sets">3×12-15</span></div><div class="plan-ex-item"><span>Walking lunges</span><span class="plan-ex-sets">3×12/p</span></div><div class="plan-ex-item"><span>Hip adduction</span><span class="plan-ex-sets">3×15</span></div><div class="plan-ex-item"><span>Cardio</span><span class="plan-ex-sets">8-10 min</span></div></div></div>
+    <div class="plan-card"><div class="plan-card-head"><div class="plan-card-day">Terça</div><div class="plan-card-title">Costas + Bicípites</div></div><div class="plan-card-body"><div class="plan-ex-item"><span>Lat pulldown</span><span class="plan-ex-sets">4×6-8</span></div><div class="plan-ex-item"><span>Seated cable row</span><span class="plan-ex-sets">4×8</span></div><div class="plan-ex-item"><span>Back extension (máquina)</span><span class="plan-ex-sets">3×15</span></div><div class="plan-ex-item"><span>Hammer curl (banda)</span><span class="plan-ex-sets">3×12</span></div><div class="plan-ex-item"><span>Cardio</span><span class="plan-ex-sets">8-10 min</span></div></div></div>
+    <div class="plan-card"><div class="plan-card-head"><div class="plan-card-day">Quarta</div><div class="plan-card-title">Post + Glúteo + Core</div></div><div class="plan-card-body"><div class="plan-ex-item"><span>Hip thrust</span><span class="plan-ex-sets">4×8</span></div><div class="plan-ex-item"><span>Romanian deadlift</span><span class="plan-ex-sets">3×8</span></div><div class="plan-ex-item"><span>Seated leg curl</span><span class="plan-ex-sets">3×12</span></div><div class="plan-ex-item"><span>Plank</span><span class="plan-ex-sets">3×60s</span></div></div></div>
+    <div class="plan-card dance-card"><div class="plan-card-head"><div class="plan-card-day">Quinta</div><div class="plan-card-title">Dança</div></div><div class="plan-card-body"><div class="plan-ex-item" style="color:var(--muted);font-style:italic"><span>Recuperação ativa</span></div></div></div>
+    <div class="plan-card rest-card"><div class="plan-card-head"><div class="plan-card-day">Sexta</div><div class="plan-card-title">Descanso</div></div><div class="plan-card-body"><div class="plan-ex-item" style="color:var(--muted);font-style:italic"><span>Mobilidade leve</span></div></div></div>
+    <div class="plan-card"><div class="plan-card-head"><div class="plan-card-day">Sábado</div><div class="plan-card-title">Glúteos Volume</div></div><div class="plan-card-body"><div class="plan-ex-item"><span>Bulgarian split squat</span><span class="plan-ex-sets">4×8/p</span></div><div class="plan-ex-item"><span>Leg press (pés altos)</span><span class="plan-ex-sets">4×8</span></div><div class="plan-ex-item"><span>Hip thrust unilateral</span><span class="plan-ex-sets">3×10/p</span></div><div class="plan-ex-item"><span>Cable lateral leg raise (polia)</span><span class="plan-ex-sets">3×20</span></div><div class="plan-ex-item"><span>Cardio</span><span class="plan-ex-sets">8-10 min</span></div></div></div>
+    <div class="plan-card"><div class="plan-card-head"><div class="plan-card-day">Domingo</div><div class="plan-card-title">PUSH + Core</div></div><div class="plan-card-body"><div class="plan-ex-item"><span>Chest press (máq.)</span><span class="plan-ex-sets">4×6-8</span></div><div class="plan-ex-item"><span>Shoulder press (máq.)</span><span class="plan-ex-sets">4×8</span></div><div class="plan-ex-item"><span>Chest fly (halteres, banco)</span><span class="plan-ex-sets">3×15</span></div><div class="plan-ex-item"><span>Lateral raises</span><span class="plan-ex-sets">4×15</span></div><div class="plan-ex-item"><span>Triceps pushdown</span><span class="plan-ex-sets">4×12</span></div><div class="plan-ex-item"><span>Ab wheel</span><span class="plan-ex-sets">3×12</span></div></div></div>
+  </div>
+</div>
+
+<!-- PROGRESSIVE OVERLOAD -->
+<div id="view-overload" class="view">
+  <h2 class="section-title">Progressive overload</h2>
+  <p class="section-sub">A única variável que garante ganho muscular ao longo do tempo. Aplica isto todas as semanas, sem exceção.</p>
+  <div class="overload-grid">
+    <div class="rule-card"><h3>Regra dos 2 para cima</h3><p>Se fizeste 2 reps a mais do que o alvo em 2 sessões seguidas, sobe a carga na sessão seguinte.<br><br>Exemplo: alvo 4×10 no leg press. Fizeste 4×12 esta semana e na passada → sobe 2,5 kg.</p></div>
+    <div class="rule-card purple"><h3>Incrementos por exercício</h3><ul><li><span>Leg press / Hip thrust</span><span>+2,5–5 kg</span></li><li><span>Lat pulldown / Chest press</span><span>+2,5 kg</span></li><li><span>Curls / Raises / Kickback</span><span>+1–2,5 kg</span></li><li><span>Plank</span><span>+5–10s / semana</span></li></ul></div>
+    <div class="rule-card red"><h3>O que registar</h3><p>Exercício · Carga usada · Séries × reps reais.<br><br>Uma nota no telemóvel chega. Sem registo não há progressão consciente.</p></div>
+    <div class="rule-card"><h3>RIR por fase</h3><ul><li><span>Fase 2 — primeiras séries</span><span>RIR 2</span></li><li><span>Fase 2 — última série</span><span>RIR 1</span></li><li><span>Fase 3 — primeiras séries</span><span>RIR 1</span></li><li><span>Fase 3 — última série</span><span>RIR 0</span></li></ul></div>
+  </div>
+</div>
+
+<!-- FÍSTULA -->
+<div id="view-fistula" class="view">
+  <h2 class="section-title">Fístula AV — regras</h2>
+  <p class="section-sub">Não negociável. Aplica em todos os treinos de membros superiores.</p>
+  <div class="fistula-grid">
+    <div class="fistula-rule"><div class="fistula-dot"></div>Nunca usar strap, wrist wrap ou cuff no antebraço direito</div>
+    <div class="fistula-rule"><div class="fistula-dot"></div>Nunca apoiar o antebraço direito numa superfície durante o exercício</div>
+    <div class="fistula-rule"><div class="fistula-dot"></div>Chest press e shoulder press: preferir máquina — nunca barra</div>
+    <div class="fistula-rule"><div class="fistula-dot"></div>Pulso direito sempre neutro — sem flexão ou extensão forçada</div>
+    <div class="fistula-rule"><div class="fistula-dot"></div>Lat pulldown e cable row: grip firme mas sem pressão no antebraço</div>
+    <div class="fistula-rule"><div class="fistula-dot"></div>Hammer curl: banda em vez de haltere — distribui tensão de forma mais segura</div>
+    <div class="fistula-rule"><div class="fistula-dot"></div>Parar imediatamente se houver formigueiro, dormência ou calor no local</div>
+    <div class="fistula-rule"><div class="fistula-dot"></div>Comunicar ao médico qualquer sinal de inchaço ou alteração da pulsação</div>
+  </div>
+  <div class="fistula-alert">Confirma com o teu nefrologista quais os exercícios de upper body que aprova. Este plano assume que tens autorização médica para treino de força geral.</div>
+</div>
+
+</div>
+
+<script>
+function showView(id, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+  btn.classList.add('active');
+  closeAllDays();
+}
+function openDay(day) {
+  closeAllDays();
+  const d = document.getElementById('day-' + day);
+  if (d) { d.classList.add('active'); d.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+}
+function closeDay(day) {
+  const d = document.getElementById('day-' + day);
+  if (d) d.classList.remove('active');
+}
+function closeAllDays() {
+  document.querySelectorAll('.day-detail').forEach(d => d.classList.remove('active'));
+}
+function toggleEx(el) {
+  const row = el.closest('.ex-row');
+  row.classList.toggle('open');
+}
+function switchPhase(n, btn) {
+  document.querySelectorAll('.phase-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('phase2-grid').style.display = n === 2 ? 'grid' : 'none';
+  document.getElementById('phase3-grid').style.display = n === 3 ? 'grid' : 'none';
+}
+</script>
+</body>
+</html>
